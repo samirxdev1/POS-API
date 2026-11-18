@@ -1,0 +1,675 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "UltimatePOS REST API for AI Agents",
+    "description": "High-performance, secure, token-authenticated REST API layer for UltimatePOS, enabling AI agents and automated systems to perform all POS operations.",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "http://localhost/api/v1",
+      "description": "Local Development Server"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "HEX (64 chars)",
+        "description": "Provide the 64-character hex token generated via `php api/tools/generate_token.php`, or use the static test token `pos_test_token_2026_antigravity` configured in .env."
+      }
+    },
+    "schemas": {
+      "StandardSuccess": {
+        "type": "object",
+        "properties": {
+          "success": { "type": "boolean", "example": true },
+          "message": { "type": "string", "example": "Operation completed successfully" },
+          "data": { "type": "object" },
+          "meta": {
+            "type": "object",
+            "properties": {
+              "total": { "type": "integer", "example": 50 },
+              "page": { "type": "integer", "example": 1 },
+              "per_page": { "type": "integer", "example": 20 },
+              "last_page": { "type": "integer", "example": 3 },
+              "has_more": { "type": "boolean", "example": true }
+            }
+          }
+        }
+      },
+      "StandardError": {
+        "type": "object",
+        "properties": {
+          "success": { "type": "boolean", "example": false },
+          "message": { "type": "string", "example": "Validation failed" },
+          "errors": { "type": "object" }
+        }
+      },
+      "ProductInput": {
+        "type": "object",
+        "required": ["name", "unit_id", "type"],
+        "properties": {
+          "name": { "type": "string", "example": "Wireless Mouse" },
+          "unit_id": { "type": "integer", "example": 1 },
+          "brand_id": { "type": "integer", "example": 2 },
+          "category_id": { "type": "integer", "example": 3 },
+          "type": { "type": "string", "enum": ["single", "variable"], "example": "single" },
+          "sku": { "type": "string", "example": "MOU-001" },
+          "barcode_type": { "type": "string", "example": "C128" },
+          "enable_stock": { "type": "boolean", "example": true },
+          "alert_quantity": { "type": "number", "example": 5 },
+          "purchase_price": { "type": "number", "example": 15.00 },
+          "selling_price": { "type": "number", "example": 25.00 },
+          "tax_rate_id": { "type": "integer", "example": 1 }
+        }
+      },
+      "ContactInput": {
+        "type": "object",
+        "required": ["name", "type"],
+        "properties": {
+          "name": { "type": "string", "example": "Acme Supplies" },
+          "type": { "type": "string", "enum": ["customer", "supplier", "both"], "example": "customer" },
+          "supplier_business_name": { "type": "string", "example": "Acme Corp" },
+          "mobile": { "type": "string", "example": "+1555123456" },
+          "email": { "type": "string", "example": "contact@acme.com" },
+          "tax_number": { "type": "string", "example": "TX-998877" },
+          "city": { "type": "string", "example": "New York" },
+          "state": { "type": "string", "example": "NY" },
+          "country": { "type": "string", "example": "USA" },
+          "address_line_1": { "type": "string", "example": "123 Broadway" },
+          "opening_balance": { "type": "number", "example": 0.00 },
+          "credit_limit": { "type": "number", "example": 1000.00 }
+        }
+      },
+      "SaleInput": {
+        "type": "object",
+        "required": ["location_id", "contact_id", "status", "products"],
+        "properties": {
+          "location_id": { "type": "integer", "example": 1 },
+          "contact_id": { "type": "integer", "example": 1 },
+          "status": { "type": "string", "enum": ["final", "draft", "quotation"], "example": "final" },
+          "discount_type": { "type": "string", "enum": ["fixed", "percentage"], "example": "fixed" },
+          "discount_amount": { "type": "number", "example": 5.00 },
+          "tax_rate_id": { "type": "integer", "example": 1 },
+          "shipping_charges": { "type": "number", "example": 2.50 },
+          "additional_notes": { "type": "string", "example": "Delivered to reception" },
+          "products": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["product_id", "variation_id", "quantity", "unit_price"],
+              "properties": {
+                "product_id": { "type": "integer", "example": 1 },
+                "variation_id": { "type": "integer", "example": 1 },
+                "quantity": { "type": "number", "example": 2 },
+                "unit_price": { "type": "number", "example": 25.00 }
+              }
+            }
+          },
+          "payments": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["amount", "method"],
+              "properties": {
+                "amount": { "type": "number", "example": 47.50 },
+                "method": { "type": "string", "enum": ["cash", "card", "cheque", "bank_transfer", "other"], "example": "cash" },
+                "note": { "type": "string", "example": "Cash payment at counter" }
+              }
+            }
+          }
+        }
+      },
+      "PurchaseInput": {
+        "type": "object",
+        "required": ["contact_id", "location_id", "status", "items"],
+        "properties": {
+          "contact_id": { "type": "integer", "example": 2 },
+          "location_id": { "type": "integer", "example": 1 },
+          "status": { "type": "string", "enum": ["received", "pending", "ordered"], "example": "received" },
+          "discount_amount": { "type": "number", "example": 0.00 },
+          "tax_amount": { "type": "number", "example": 0.00 },
+          "shipping_charges": { "type": "number", "example": 10.00 },
+          "additional_notes": { "type": "string", "example": "Batch #2026-A" },
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["product_id", "variation_id", "quantity", "purchase_price"],
+              "properties": {
+                "product_id": { "type": "integer", "example": 1 },
+                "variation_id": { "type": "integer", "example": 1 },
+                "quantity": { "type": "number", "example": 50 },
+                "purchase_price": { "type": "number", "example": 15.00 }
+              }
+            }
+          },
+          "payments": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["amount", "method"],
+              "properties": {
+                "amount": { "type": "number", "example": 760.00 },
+                "method": { "type": "string", "example": "bank_transfer" }
+              }
+            }
+          }
+        }
+      },
+      "StockAdjustmentInput": {
+        "type": "object",
+        "required": ["location_id", "adjustment_type", "products"],
+        "properties": {
+          "location_id": { "type": "integer", "example": 1 },
+          "adjustment_type": { "type": "string", "enum": ["normal", "abnormal"], "example": "normal" },
+          "additional_notes": { "type": "string", "example": "Damaged goods write-off" },
+          "total_amount_recovered": { "type": "number", "example": 0.00 },
+          "products": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["product_id", "variation_id", "quantity", "unit_price"],
+              "properties": {
+                "product_id": { "type": "integer", "example": 1 },
+                "variation_id": { "type": "integer", "example": 1 },
+                "quantity": { "type": "number", "example": 3 },
+                "unit_price": { "type": "number", "example": 15.00 }
+              }
+            }
+          }
+        }
+      },
+      "ExpenseInput": {
+        "type": "object",
+        "required": ["location_id", "final_total"],
+        "properties": {
+          "location_id": { "type": "integer", "example": 1 },
+          "expense_category_id": { "type": "integer", "example": 1 },
+          "final_total": { "type": "number", "example": 75.00 },
+          "transaction_date": { "type": "string", "example": "2026-11-18 10:00:00" },
+          "additional_notes": { "type": "string", "example": "Office stationery" },
+          "payments": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["amount", "method"],
+              "properties": {
+                "amount": { "type": "number", "example": 75.00 },
+                "method": { "type": "string", "example": "cash" }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "paths": {
+    "/ping": {
+      "get": {
+        "summary": "Health Check",
+        "description": "Returns API service health, app version, PHP runtime, and database connection status.",
+        "security": [],
+        "responses": {
+          "200": { "description": "API is healthy", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/StandardSuccess" } } } }
+        }
+      }
+    },
+    "/meta/endpoints": {
+      "get": {
+        "summary": "Endpoint Discovery Catalog",
+        "description": "Lists all registered API endpoints, methods, descriptions, required parameters, and permission scopes for AI tooling.",
+        "responses": {
+          "200": { "description": "Endpoints catalog", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/StandardSuccess" } } } }
+        }
+      }
+    },
+    "/products": {
+      "get": {
+        "summary": "List Products",
+        "description": "Retrieve paginated list of products with optional filtering by type, category, brand, and unit.",
+        "parameters": [
+          { "name": "page", "in": "query", "schema": { "type": "integer" } },
+          { "name": "per_page", "in": "query", "schema": { "type": "integer" } },
+          { "name": "search", "in": "query", "schema": { "type": "string" } },
+          { "name": "category_id", "in": "query", "schema": { "type": "integer" } },
+          { "name": "brand_id", "in": "query", "schema": { "type": "integer" } },
+          { "name": "type", "in": "query", "schema": { "type": "string", "enum": ["single", "variable"] } }
+        ],
+        "responses": {
+          "200": { "description": "Products retrieved", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/StandardSuccess" } } } }
+        }
+      },
+      "post": {
+        "summary": "Create Product",
+        "description": "Create a new single or variable product with default variations and pricing.",
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ProductInput" } } }
+        },
+        "responses": {
+          "201": { "description": "Product created", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/StandardSuccess" } } } },
+          "422": { "description": "Validation failed", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/StandardError" } } } }
+        }
+      }
+    },
+    "/products/search": {
+      "get": {
+        "summary": "Search Products",
+        "description": "Quick search for products and variations by name, SKU, or sub_sku with stock per location.",
+        "parameters": [
+          { "name": "term", "in": "query", "required": true, "schema": { "type": "string" } },
+          { "name": "location_id", "in": "query", "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "200": { "description": "Search results", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/StandardSuccess" } } } }
+        }
+      }
+    },
+    "/products/{id}": {
+      "get": {
+        "summary": "Get Product Details",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }],
+        "responses": {
+          "200": { "description": "Product details", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/StandardSuccess" } } } },
+          "404": { "description": "Product not found", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/StandardError" } } } }
+        }
+      },
+      "put": {
+        "summary": "Update Product",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ProductInput" } } }
+        },
+        "responses": {
+          "200": { "description": "Product updated", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/StandardSuccess" } } } }
+        }
+      },
+      "delete": {
+        "summary": "Delete Product",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }],
+        "responses": {
+          "200": { "description": "Product deleted", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/StandardSuccess" } } } },
+          "409": { "description": "Conflict: product linked to transactions", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/StandardError" } } } }
+        }
+      }
+    },
+    "/products/bulk-import": {
+      "post": {
+        "summary": "Bulk Import Products",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["products"],
+                "properties": {
+                  "products": { "type": "array", "items": { "$ref": "#/components/schemas/ProductInput" } }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Bulk import completed", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/StandardSuccess" } } } }
+        }
+      }
+    },
+    "/inventory/stock": {
+      "get": {
+        "summary": "Get Inventory Stock",
+        "parameters": [
+          { "name": "location_id", "in": "query", "schema": { "type": "integer" } },
+          { "name": "product_id", "in": "query", "schema": { "type": "integer" } },
+          { "name": "search", "in": "query", "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": { "description": "Stock levels retrieved", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/StandardSuccess" } } } }
+        }
+      }
+    },
+    "/inventory/adjust": {
+      "post": {
+        "summary": "Adjust Stock",
+        "description": "Adjust product inventory (normal or abnormal) with automatic stock deduction and transaction recording.",
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/StockAdjustmentInput" } } }
+        },
+        "responses": {
+          "201": { "description": "Stock adjustment recorded", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/StandardSuccess" } } } }
+        }
+      }
+    },
+    "/inventory/low-stock": {
+      "get": {
+        "summary": "List Low Stock Products",
+        "parameters": [{ "name": "location_id", "in": "query", "schema": { "type": "integer" } }],
+        "responses": {
+          "200": { "description": "Low-stock items", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/StandardSuccess" } } } }
+        }
+      }
+    },
+    "/inventory/history": {
+      "get": {
+        "summary": "Stock Movement Audit Ledger",
+        "parameters": [
+          { "name": "product_id", "in": "query", "schema": { "type": "integer" } },
+          { "name": "location_id", "in": "query", "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "200": { "description": "Stock movement history", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/StandardSuccess" } } } }
+        }
+      }
+    },
+    "/contacts": {
+      "get": {
+        "summary": "List Contacts",
+        "parameters": [
+          { "name": "type", "in": "query", "schema": { "type": "string", "enum": ["customer", "supplier", "both"] } },
+          { "name": "search", "in": "query", "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": { "description": "Contacts retrieved", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/StandardSuccess" } } } }
+        }
+      },
+      "post": {
+        "summary": "Create Contact",
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ContactInput" } } }
+        },
+        "responses": {
+          "201": { "description": "Contact created", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/StandardSuccess" } } } }
+        }
+      }
+    },
+    "/contacts/{id}": {
+      "get": {
+        "summary": "Get Contact Details & Balance",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }],
+        "responses": {
+          "200": { "description": "Contact details", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/StandardSuccess" } } } }
+        }
+      },
+      "put": {
+        "summary": "Update Contact",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ContactInput" } } }
+        },
+        "responses": {
+          "200": { "description": "Contact updated", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/StandardSuccess" } } } }
+        }
+      },
+      "delete": {
+        "summary": "Delete Contact",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }],
+        "responses": {
+          "200": { "description": "Contact deleted", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/StandardSuccess" } } } }
+        }
+      }
+    },
+    "/contacts/{id}/ledger": {
+      "get": {
+        "summary": "Get Contact Financial Ledger",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } },
+          { "name": "start_date", "in": "query", "schema": { "type": "string" } },
+          { "name": "end_date", "in": "query", "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": { "description": "Ledger details", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/StandardSuccess" } } } }
+        }
+      }
+    },
+    "/sales": {
+      "get": {
+        "summary": "List Sales",
+        "parameters": [
+          { "name": "contact_id", "in": "query", "schema": { "type": "integer" } },
+          { "name": "location_id", "in": "query", "schema": { "type": "integer" } },
+          { "name": "status", "in": "query", "schema": { "type": "string", "enum": ["final", "draft", "quotation", "cancelled"] } },
+          { "name": "payment_status", "in": "query", "schema": { "type": "string", "enum": ["paid", "due", "partial"] } },
+          { "name": "start_date", "in": "query", "schema": { "type": "string" } },
+          { "name": "end_date", "in": "query", "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": { "description": "Sales retrieved", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/StandardSuccess" } } } }
+        }
+      },
+      "post": {
+        "summary": "Create Sale (POS / Billing)",
+        "description": "Create sale with line items, tax, discount, payments, and automatic stock decrement.",
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/SaleInput" } } }
+        },
+        "responses": {
+          "201": { "description": "Sale created", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/StandardSuccess" } } } }
+        }
+      }
+    },
+    "/sales/{id}": {
+      "get": {
+        "summary": "Get Sale by ID",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }],
+        "responses": {
+          "200": { "description": "Sale retrieved", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/StandardSuccess" } } } }
+        }
+      }
+    },
+    "/sales/{id}/void": {
+      "post": {
+        "summary": "Void / Cancel Sale",
+        "description": "Cancels sale and automatically restores inventory quantities.",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }],
+        "responses": {
+          "200": { "description": "Sale voided and stock restored", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/StandardSuccess" } } } }
+        }
+      }
+    },
+    "/sales/{id}/hold": {
+      "post": {
+        "summary": "Hold / Suspend Sale",
+        "description": "Sets status to draft without committing final stock deductions.",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }],
+        "responses": {
+          "200": { "description": "Sale placed on hold", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/StandardSuccess" } } } }
+        }
+      }
+    },
+    "/sales/{id}/resume": {
+      "post": {
+        "summary": "Resume Held Sale",
+        "description": "Finalizes held draft sale and deducts items from inventory.",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }],
+        "responses": {
+          "200": { "description": "Sale resumed and finalized", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/StandardSuccess" } } } }
+        }
+      }
+    },
+    "/sales/{id}/invoice": {
+      "get": {
+        "summary": "Get Print-Ready Invoice Data",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }],
+        "responses": {
+          "200": { "description": "Invoice printable layout data", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/StandardSuccess" } } } }
+        }
+      }
+    },
+    "/returns/sales": {
+      "get": { "summary": "List Sale Returns", "responses": { "200": { "description": "Sale returns retrieved" } } },
+      "post": {
+        "summary": "Process Sale Return",
+        "description": "Refund sale lines and restock items back into inventory.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["sale_id", "returns"],
+                "properties": {
+                  "sale_id": { "type": "integer" },
+                  "returns": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "required": ["sell_line_id", "quantity"],
+                      "properties": { "sell_line_id": { "type": "integer" }, "quantity": { "type": "number" } }
+                    }
+                  },
+                  "refund_amount": { "type": "number" }
+                }
+              }
+            }
+          }
+        },
+        "responses": { "201": { "description": "Sale return processed" } }
+      }
+    },
+    "/returns/purchases": {
+      "get": { "summary": "List Purchase Returns", "responses": { "200": { "description": "Purchase returns retrieved" } } },
+      "post": {
+        "summary": "Process Purchase Return",
+        "description": "Return goods to supplier and decrease inventory.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["purchase_id", "returns"],
+                "properties": {
+                  "purchase_id": { "type": "integer" },
+                  "returns": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "required": ["purchase_line_id", "quantity"],
+                      "properties": { "purchase_line_id": { "type": "integer" }, "quantity": { "type": "number" } }
+                    }
+                  },
+                  "refund_amount": { "type": "number" }
+                }
+              }
+            }
+          }
+        },
+        "responses": { "201": { "description": "Purchase return processed" } }
+      }
+    },
+    "/purchases": {
+      "get": { "summary": "List Purchases", "responses": { "200": { "description": "Purchases retrieved" } } },
+      "post": {
+        "summary": "Create Purchase Order / Purchase",
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PurchaseInput" } } }
+        },
+        "responses": { "201": { "description": "Purchase created" } }
+      }
+    },
+    "/purchases/{id}": {
+      "get": { "summary": "Get Purchase Details", "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }], "responses": { "200": { "description": "Purchase details" } } }
+    },
+    "/purchases/{id}/receive": {
+      "post": {
+        "summary": "Receive Stock from Purchase",
+        "description": "Marks purchase as received and automatically increments product stock.",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }],
+        "responses": { "200": { "description": "Stock received and updated" } }
+      }
+    },
+    "/payments": {
+      "get": { "summary": "List Payments", "responses": { "200": { "description": "Payments retrieved" } } },
+      "post": {
+        "summary": "Record Payment",
+        "description": "Add payment against a sale, purchase, or expense transaction.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["transaction_id", "amount", "method"],
+                "properties": {
+                  "transaction_id": { "type": "integer" },
+                  "amount": { "type": "number" },
+                  "method": { "type": "string", "enum": ["cash", "card", "cheque", "bank_transfer", "other"] },
+                  "note": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": { "201": { "description": "Payment added" } }
+      }
+    },
+    "/payments/due": {
+      "get": {
+        "summary": "List Outstanding Due Amounts",
+        "parameters": [
+          { "name": "type", "in": "query", "schema": { "type": "string", "enum": ["sell", "purchase"] } }
+        ],
+        "responses": { "200": { "description": "Due amounts retrieved" } }
+      }
+    },
+    "/expenses": {
+      "get": { "summary": "List Expenses", "responses": { "200": { "description": "Expenses retrieved" } } },
+      "post": {
+        "summary": "Record Expense",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ExpenseInput" } } } },
+        "responses": { "201": { "description": "Expense recorded" } }
+      }
+    },
+    "/reports/sales": {
+      "get": {
+        "summary": "Sales Report",
+        "parameters": [
+          { "name": "start_date", "in": "query", "schema": { "type": "string" } },
+          { "name": "end_date", "in": "query", "schema": { "type": "string" } },
+          { "name": "group_by", "in": "query", "schema": { "type": "string", "enum": ["day", "month"] } }
+        ],
+        "responses": { "200": { "description": "Sales report" } }
+      }
+    },
+    "/reports/profit-loss": {
+      "get": {
+        "summary": "Profit & Loss Report",
+        "parameters": [
+          { "name": "start_date", "in": "query", "schema": { "type": "string" } },
+          { "name": "end_date", "in": "query", "schema": { "type": "string" } }
+        ],
+        "responses": { "200": { "description": "Profit and loss report" } }
+      }
+    },
+    "/reports/top-products": {
+      "get": {
+        "summary": "Top Selling Products",
+        "parameters": [
+          { "name": "limit", "in": "query", "schema": { "type": "integer" } }
+        ],
+        "responses": { "200": { "description": "Top products" } }
+      }
+    },
+    "/reports/stock-valuation": {
+      "get": { "summary": "Stock Valuation Summary", "responses": { "200": { "description": "Valuation details" } } }
+    },
+    "/reports/tax-summary": {
+      "get": { "summary": "Tax Summary (Input vs Output)", "responses": { "200": { "description": "Tax summary" } } }
+    }
+  }
+}
+

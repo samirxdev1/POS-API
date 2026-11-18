@@ -1,0 +1,244 @@
+{
+  "info": {
+    "name": "UltimatePOS AI Agent REST API",
+    "description": "Comprehensive Postman test collection for UltimatePOS REST API layer.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost/api/v1" },
+    { "key": "apiToken", "value": "pos_test_token_2026_antigravity" },
+    { "key": "productId", "value": "1" },
+    { "key": "contactId", "value": "1" },
+    { "key": "saleId", "value": "1" }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      { "key": "token", "value": "{{apiToken}}", "type": "string" }
+    ]
+  },
+  "item": [
+    {
+      "name": "01. Discovery & Auth",
+      "item": [
+        {
+          "name": "Ping Health Check (Public)",
+          "request": {
+            "method": "GET",
+            "auth": { "type": "noauth" },
+            "url": { "raw": "{{baseUrl}}/ping" }
+          }
+        },
+        {
+          "name": "Unauthorized Access (No Token)",
+          "request": {
+            "method": "GET",
+            "auth": { "type": "noauth" },
+            "url": { "raw": "{{baseUrl}}/products" }
+          }
+        },
+        {
+          "name": "Get Endpoint Catalog",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/meta/endpoints" }
+          }
+        }
+      ]
+    },
+    {
+      "name": "02. Taxonomies",
+      "item": [
+        { "name": "List Categories", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/categories" } } },
+        {
+          "name": "Create Category",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Electronics\",\n  \"short_code\": \"ELEC\"\n}" },
+            "url": { "raw": "{{baseUrl}}/categories" }
+          }
+        },
+        { "name": "List Brands", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/brands" } } },
+        {
+          "name": "Create Brand",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Logitech\",\n  \"description\": \"Peripherals\"\n}" },
+            "url": { "raw": "{{baseUrl}}/brands" }
+          }
+        },
+        { "name": "List Units", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/units" } } },
+        {
+          "name": "Create Unit",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"actual_name\": \"Pieces\",\n  \"short_name\": \"Pc\",\n  \"allow_decimal\": 0\n}" },
+            "url": { "raw": "{{baseUrl}}/units" }
+          }
+        }
+      ]
+    },
+    {
+      "name": "03. Products",
+      "item": [
+        { "name": "List Products", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/products?page=1&per_page=20" } } },
+        {
+          "name": "Create Product (Single)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Logitech MX Master 3S\",\n  \"unit_id\": 1,\n  \"type\": \"single\",\n  \"sku\": \"LOG-MX3S\",\n  \"enable_stock\": true,\n  \"alert_quantity\": 5,\n  \"purchase_price\": 70.00,\n  \"selling_price\": 99.00\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/products" }
+          }
+        },
+        { "name": "Search Products", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/products/search?term=Logitech" } } },
+        { "name": "Get Product by ID", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/products/{{productId}}" } } },
+        {
+          "name": "Update Product",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"selling_price\": 109.00\n}" },
+            "url": { "raw": "{{baseUrl}}/products/{{productId}}" }
+          }
+        }
+      ]
+    },
+    {
+      "name": "04. Inventory",
+      "item": [
+        { "name": "Get Stock", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/inventory/stock" } } },
+        {
+          "name": "Adjust Stock",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"location_id\": 1,\n  \"adjustment_type\": \"normal\",\n  \"products\": [\n    {\n      \"product_id\": 1,\n      \"variation_id\": 1,\n      \"quantity\": 2,\n      \"unit_price\": 70.00\n    }\n  ],\n  \"additional_notes\": \"Audit count adjustment\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/inventory/adjust" }
+          }
+        },
+        { "name": "Low Stock List", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/inventory/low-stock" } } },
+        { "name": "Stock Movement History", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/inventory/history" } } }
+      ]
+    },
+    {
+      "name": "05. Contacts",
+      "item": [
+        { "name": "List Customers", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/contacts?type=customer" } } },
+        {
+          "name": "Create Customer",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"John Doe\",\n  \"type\": \"customer\",\n  \"mobile\": \"+1555019283\",\n  \"email\": \"john.doe@example.com\",\n  \"city\": \"San Francisco\",\n  \"opening_balance\": 0\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/contacts" }
+          }
+        },
+        { "name": "Get Contact Ledger", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/contacts/{{contactId}}/ledger" } } }
+      ]
+    },
+    {
+      "name": "06. Purchases",
+      "item": [
+        { "name": "List Purchases", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/purchases" } } },
+        {
+          "name": "Create Purchase & Receive Stock",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"contact_id\": 1,\n  \"location_id\": 1,\n  \"status\": \"received\",\n  \"items\": [\n    {\n      \"product_id\": 1,\n      \"variation_id\": 1,\n      \"quantity\": 20,\n      \"purchase_price\": 70.00\n    }\n  ],\n  \"payments\": [\n    {\n      \"amount\": 1400.00,\n      \"method\": \"bank_transfer\"\n    }\n  ]\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/purchases" }
+          }
+        }
+      ]
+    },
+    {
+      "name": "07. Sales & POS",
+      "item": [
+        { "name": "List Sales", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/sales" } } },
+        {
+          "name": "Create Sale (POS Billing)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"location_id\": 1,\n  \"contact_id\": 1,\n  \"status\": \"final\",\n  \"products\": [\n    {\n      \"product_id\": 1,\n      \"variation_id\": 1,\n      \"quantity\": 1,\n      \"unit_price\": 99.00\n    }\n  ],\n  \"payments\": [\n    {\n      \"amount\": 99.00,\n      \"method\": \"cash\"\n    }\n  ]\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/sales" }
+          }
+        },
+        { "name": "Get Sale Invoice Data", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/sales/{{saleId}}/invoice" } } },
+        { "name": "Void / Cancel Sale", "request": { "method": "POST", "url": { "raw": "{{baseUrl}}/sales/{{saleId}}/void" } } }
+      ]
+    },
+    {
+      "name": "08. Returns",
+      "item": [
+        { "name": "List Sale Returns", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/returns/sales" } } },
+        { "name": "List Purchase Returns", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/returns/purchases" } } }
+      ]
+    },
+    {
+      "name": "09. Payments",
+      "item": [
+        { "name": "List Payments", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/payments" } } },
+        { "name": "Outstanding Due Balances", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/payments/due?type=sell" } } }
+      ]
+    },
+    {
+      "name": "10. Expenses",
+      "item": [
+        { "name": "List Expense Categories", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/expenses/categories" } } },
+        {
+          "name": "Create Expense",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"location_id\": 1,\n  \"final_total\": 45.00,\n  \"additional_notes\": \"Cleaning supplies\",\n  \"payments\": [{ \"amount\": 45.00, \"method\": \"cash\" }]\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/expenses" }
+          }
+        }
+      ]
+    },
+    {
+      "name": "11. Reports",
+      "item": [
+        { "name": "Daily/Monthly Sales Report", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/reports/sales?group_by=day" } } },
+        { "name": "Profit & Loss Report", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/reports/profit-loss" } } },
+        { "name": "Top Selling Products", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/reports/top-products?limit=10" } } },
+        { "name": "Stock Valuation Report", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/reports/stock-valuation" } } },
+        { "name": "Tax Summary Report", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/reports/tax-summary" } } }
+      ]
+    },
+    {
+      "name": "12. Settings & Users",
+      "item": [
+        { "name": "Business Settings", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/settings/business" } } },
+        { "name": "Business Locations", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/settings/locations" } } },
+        { "name": "Tax Rates", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/settings/tax-rates" } } },
+        { "name": "List Users", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/users" } } },
+        { "name": "List Roles", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/roles" } } }
+      ]
+    }
+  ]
+}
+
